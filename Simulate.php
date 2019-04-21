@@ -22,25 +22,45 @@ class Simulate
 		// foreach ($arr as $key => $value) {
 		// 	$this->compare($arithmetic,$value,4);
 		// }
-		 //$arr = [500,1000,2000,500,1000,2000,500,1000,2000];
-		$arr = [50,100,200,500,1000];
-		$arithmetic = 6;
-		foreach ($arr as $key => $value) {
-			$this->compare($arithmetic,$value,4);
+		for ($i=0; $i <30; $i++) { 
 			# code...
+			$this->compare(2,500,4);
 		}
-		foreach ($arr as $key => $value) {
-			$this->compare($arithmetic,$value,4);
+		for ($i=0; $i <30; $i++) { 
 			# code...
+			$this->compare(3,500,4);
 		}
-		foreach ($arr as $key => $value) {
-			$this->compare($arithmetic,$value,4);
+		for ($i=0; $i <30; $i++) { 
 			# code...
+			$this->compare(5,500,4);
 		}
-		foreach ($arr as $key => $value) {
-			$this->compare($arithmetic,$value,4);
-			# code...
-		}
+		
+
+		// for ($i=0; $i < 30; $i++) { 
+		// 	$this->compare(6,500,4);
+		// }
+		// $arr = [50,100,200,500,1000];
+		// $arithmetic = 6;
+		// foreach ($arr as $key => $value) {
+		// 	$this->compare($arithmetic,$value,4);
+		// 	# code...
+		// }
+		// foreach ($arr as $key => $value) {
+		// 	$this->compare($arithmetic,$value,4);
+		// 	# code...
+		// }
+		// foreach ($arr as $key => $value) {
+		// 	$this->compare($arithmetic,$value,4);
+		// 	# code...
+		// }
+		// foreach ($arr as $key => $value) {
+		// 	$this->compare($arithmetic,$value,4);
+		// 	# code...
+		// }
+		// for ($i=0; $i < 30; $i++) { 
+		// 	$this->compare(3,500,4);
+		// 	# code...
+		// }
 		// for ($i=0; $i < 5; $i++) { 
 		// 	$this->compare(1,5000,4);
 		// 	# code...
@@ -124,6 +144,10 @@ class Simulate
 		case 6: 
 			$arithmeticR = $Arithmetic->ant();
 			$record1['arithmetic'] = '蚁群聚类';
+			break;
+		case 7: 
+			$arithmeticR = $Arithmetic->kmeans();
+			$record1['arithmetic'] = 'kmeans';
 			break;
 		default:
 		  $return['code'] = 1;

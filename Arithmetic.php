@@ -6,15 +6,362 @@ class Arithmetic
 	private $student_list = array();
 	private $dormList = array();
 	private $n = 0;
+	private $table = 0; 
 
 	public function __construct($student_list,$dormList,$n){
-
-
-
 		$this->student_list = $student_list;
 		$this->dormList = $dormList;
 		$this->n = $n;
+				//相异度矩阵
 	}
+
+
+	public function createtable($stus)
+	{
+		
+		$table[] = [];
+		$MathModel = new \app\common\librarie\MathModel();
+		for ($i=0; $i < count($stus); $i++) { 
+			$item = [];
+			for ($j=0; $j < count($stus); $j++) {
+				$item[] = (float)$MathModel->bothMR($stus[$i],$stus[$j]);	
+			}
+			$table[$i] = $item;
+		}
+		$this->table = $table;
+		//var_dump($this->table);
+	}	
+	
+		
+
+	public function dis($stua,$stub)
+	{
+		//"学生stus[$stua]，stus[$stub]之间的距离"
+		// echo $stua;
+		// echo $stub;
+		// echo "\n";
+		if ($stua == $stub) {
+			return 100;
+			# code...
+		}
+		return  $this->table[$stua][$stub];
+		
+
+	}
+
+	public function randcent($stus,$k)
+	{
+		//"随机从stus中生成k个心"
+		$cents = [];
+		for ($i=0; $i < $k; $i++) { 
+			$centkey = array_rand($stus,1);
+			if (in_array($centkey,$cents)) {
+				$i--;
+			}else
+			{
+				$cents[] = $centkey;				
+			}
+			
+			//var_dump($cents);
+		}
+		return $cents;
+
+	}
+
+
+	public function minCent($stu,$centMap)
+	{
+		//"计算centMap中哪个中心与stu最近"
+		//stu为stus[$stu]
+		$maxMR = 0;
+		$mincent = 0;
+		
+		foreach ($centMap as $key => $value) {
+			$dis = $this->dis($key,$stu);
+			// echo "</br>";
+			// echo $key."  ";
+			// echo $stu."  ";
+			// echo $dis."  ";
+			//  echo "</br>";
+			
+			if ($dis > $maxMR) {
+				$maxMR = $dis;
+				// echo "MR".$maxMR;
+				$mincent = $key;
+			}
+		}
+		return $mincent;
+
+	}
+
+	public function centStu($stus)
+	{
+		//"计算stus中哪个学生为中心点"
+		$maxMR  = 0;
+		$centStu = 0;
+	
+		foreach ($stus as $key => $value) {
+			$countDis = 0;
+			foreach ($stus as $key2 => $value2) {
+				$countDis += $this->dis($value2,$value);
+			}
+
+			if ($countDis > $maxMR) {
+				$maxMR = $countDis;
+				$centStu = $value;
+			}
+		}
+		
+		return $centStu;
+
+	}
+
+
+
+	public function kmeans(){
+		$timeStart = $this->getMicrotime();
+		$MathModel = new \app\common\librarie\MathModel();
+		$this->createtable($this->student_list);
+
+		//var_dump($this->table);
+		//$timeStart = $this->getMicrotime();
+		echo "start".$timeStart;
+		$stus = $this->student_list;
+		$dormList = $this->dormList;
+		$n = $this->n;
+		$k = count($this->dormList);
+		$isChange = TRUE;
+		$sampleCount = count($stus);
+		$centList  = $this->randcent($stus,$k);
+		$centMap = [];
+		
+		//var_dump($centList);
+		//echo "</br>";
+		//var_dump($this->table);
+		//echo "</br>";
+		//第一次分配
+		foreach ($centList as $key => $value) {
+			$centMap[$value]=[$value];
+		}
+		foreach ($stus as $key => $value){
+			if (isset($centMap[$key])) {
+				# code...
+			}else
+			{
+				$mincent = $this->minCent($key,$centMap);
+				$centMap[$mincent][] = $key;
+			}
+			
+		}
+		// echo "</br>";
+		// var_dump($centMap);
+		// echo "</br>";
+		//更新中心点
+		foreach ($centMap as $centStu => $stus) {
+			$newcentstu = $this->centStu($stus);
+
+			// echo "</br>";
+			// echo "sss";
+			// var_dump($newcentstu);
+			// echo "</br>";
+
+			if ($newcentstu != $centStu) {
+				//array_splice($centMap,$centStu,1);
+				unset($centMap[$centStu]);
+				// var_dump($centMap);
+				// echo "</br>";
+				$centMap[$newcentstu] = $stus;
+				// //array_splice($centMap,$centStu,1);
+				// var_dump($centMap);
+				// echo "</br>";
+			}
+		}
+
+		//var_dump($centMap);
+		//die;
+
+		//迭代分配
+		$times = 0;
+		while($isChange)
+		{
+			$isChange = FALSE;
+			$times++;
+			if ($times>10) {
+				break;
+			}
+			//重新归类
+			foreach ($centMap as $centStu => $stus) {
+				foreach ($stus as $key => $stu) {
+					$newcent = $this->minCent($stu,$centMap);
+					if ($newcent != $centStu) {
+						$isChange = TRUE;
+						// echo "</br>";
+						// echo "stu".$stu;
+						// var_dump($centMap);
+						// echo "newcent".$newcent;
+						// echo "</br>";
+						// echo "centStu".$centStu;
+						unset($centMap[$centStu][$key]);
+
+						// echo "</br>";
+						// var_dump($centMap);
+						// echo 1;
+						// echo "</br>";
+						$centMap[$newcent][] = $stu;
+					}
+				}
+			}
+
+			foreach ($centMap as $centStu => $stus) {
+				$newcentstu = $this->centStu($stus);
+
+				// echo "</br>";
+				// echo "sss";
+				// var_dump($newcentstu);
+				// echo "</br>";
+
+				if ($newcentstu != $centStu) {
+					//array_splice($centMap,$centStu,1);
+					unset($centMap[$centStu]);
+					// var_dump($centMap);
+					// echo "</br>";
+					$centMap[$newcentstu] = $stus;
+					// //array_splice($centMap,$centStu,1);
+					// var_dump($centMap);
+					// echo "</br>";
+				}
+			}
+
+		}
+		$c = 0;
+		foreach ($centMap as $key => $value) {
+			
+			if (count($value)>=($this->n)) {
+				//var_dump($value);
+				//echo "string";
+				$c ++;
+			}
+		}
+
+		//var_dump($centMap);
+		//echo $c;
+
+
+		//迭代结束。
+		//对类内元素数量大于n的类直接分宿舍
+		//对类内元素数量小于n的类和剩下的用贪心
+		$tempDormMap =[];
+		$dormMap = [];
+		$dormList = $this->dormList;
+		$beenDistrubuteStus = [];
+		$waitDistrubuteStus = [];
+		$n = $this->n;
+		$dormNum = 0;
+		foreach ($centMap as $key => $value) {
+			
+			$stus = $value;
+			unset($centMap[$key]);
+			$num = count($stus);
+
+			$stus = array_values($stus);
+
+			while ($num>=$n) {
+				for ($i=0; $i < $n; $i++) { 
+					$tempDormMap[$dormNum][]=$stus[$i];
+					$beenDistrubuteStus[] = $stus[$i];
+					unset($stus[$i]);
+				}
+				$num = count($stus);
+				$stus = array_values($stus);
+				$dormNum++;
+			}
+
+			for ($i=0; $i < count($stus); $i++) { 
+				$waitDistrubuteStus[] = $stus[$i];
+			}
+		}
+
+		// echo " ".$dormNum;
+		 // var_dump($tempDormMap);
+		 // echo "</br>";
+		// var_dump($beenDistrubuteStus);
+		// echo "</br>";
+		// var_dump($waitDistrubuteStus);
+		$waitdormList = [];
+		foreach ($dormList as $key => $value) {
+			if (count($tempDormMap)>0) {
+				for ($i=0; $i < $n; $i++) {
+					$dormMap[$value]['stus'][]= $this->student_list[$tempDormMap[0][$i]];
+					# code...
+				}
+				$dormMap[$value]['MR'] = $MathModel->dormMR($dormMap[$value]['stus']);
+				unset($tempDormMap[0]);
+				$tempDormMap = array_values($tempDormMap);
+			}
+			else
+			{
+				$waitdormList[] = $value;
+			}
+		}
+		//echo count($dormMap);
+		// var_dump($dormMap);
+		//  echo "</br>";
+
+
+		foreach ($dormMap as $key1 => $value1) {
+    		$item = [];
+    		foreach ($value1['stus'] as $key2 => $value2) {
+    			$item[] = $value2['number'];
+    		}
+    		
+    		$dormMap[$key1]['stus'] = $item;
+    	}
+    	
+    	
+
+
+		//剩下的$waitDistrubuteStus贪心
+		$waitstus = [];
+		foreach ($waitDistrubuteStus as $key => $value) {
+			$waitstus[] =  $this->student_list[$value];
+		}
+
+		//echo count($waitstus);
+		$greedyResult = $this->greedyByargu($waitstus,$waitdormList);
+
+
+		//var_dump($greedyResult);
+		//echo "</br>";echo "</br>";
+		$dormMap = array_merge($dormMap,$greedyResult["data"]);
+		//var_dump($dormMap);
+		//echo "</br>";
+
+		$MRList = [];
+		foreach ($dormMap as $key1 => $value1) {
+    		$MRList[] = $value1['MR'];
+    	}
+
+		$AaS = $this->AveAndSta($MRList);
+		$timeEnd = $this->getMicrotime();
+		$runTime = $timeEnd - $timeStart;
+		$LMRN = $this->countLMRN($MRList,$AaS['average']);
+		$return['LMRN'] = $LMRN;
+		$return['data'] = $dormMap;
+    	$return['AaS'] = $AaS;
+    	$return['runTime'] = $runTime;
+
+    	echo " end ".$timeEnd." ";
+    	echo "time ".$runTime;
+    	echo "</br>";
+
+    	return $return;
+
+
+	}
+
+
+
+	
 		
 	//蚁群聚类算法
 	public function ant(){
@@ -576,6 +923,89 @@ class Arithmetic
 
     	return $return;
     }
+
+    //贪心算法
+    public function greedyByargu($stus,$waitdormList){
+    	
+    	$timeStart = $this->getMicrotime();
+    	$n = $this->n;
+    	$MathModel = new \app\common\librarie\MathModel();
+    	$dormMap = [];
+		$MRList = [];
+    	foreach ($waitdormList as $key => $value) {
+    		if(count($stus) == 0){
+    			break;
+    		}
+    		foreach ($stus as $k => $val) {
+    			$dormMap[$value][] = $val;
+    			unset($stus[$k]);
+    			break;
+    		}
+    		$MR = 0;
+    		//找到学生$student最合适的n-1个舍友
+    		for ($i=0; $i < $n-1; $i++) {
+    			//寻找宿舍$value第i+2个室友
+    			$maxMatch = 0;
+    			$maxNum = 0;
+    			$afterUStudents = "";
+    			if(count($stus) == 0){
+	    			break;
+	    		}
+    			foreach ($stus as $k => $val) {
+    				//将要计算匹配度的学生放在一个数组中
+    				$afterUStudents = $dormMap[$value];
+    				$afterUStudents[] = $val;
+    				//计算该数组内学生的匹配度
+    				
+	    			$result = $MathModel->dormMR($afterUStudents);	
+	    			if ($result>$maxMatch) {
+	    			 	$maxNum = $k;
+	    			 	$maxMatch = $result;
+	    			}
+    			 }
+    			 //最好的匹配对象学号在$maxNum中
+    			 //扔进该宿舍集合，并从原待分配中数组移出
+    			$dormMap[$value][] = $stus[$maxNum];
+    			unset($stus[$maxNum]);
+    			if($i == 2 || count($stus) == 0){
+    				$MR = $maxMatch;
+    			}
+
+    		}
+			$MRList[] = $MR;
+			$dormMap[$value]['MR'] = $MR;
+    		
+    	}
+
+    	//整理封装数据
+    	foreach ($dormMap as $key1 => $value1) {
+    		$item = [];
+    		$MR = $value1['MR'];
+    		for ($i=0; $i < $n ; $i++) { 
+    			if(isset($value1[$i])){
+    				$item[] = $value1[$i]['number'];
+    			}
+    		}
+    		
+    		$dormMap[$key1] = ['MR'=>$MR,'stus'=>$item];
+    	}
+    	
+    	//记录
+    	$AaS = $this->AveAndSta($MRList);
+    	$timeEnd = $this->getMicrotime();
+    	$runTime = $timeEnd - $timeStart;
+
+    	$LMRN = $this->countLMRN($MRList,$AaS['average']);
+    	$return['LMRN'] = $LMRN;
+
+    	$return['data'] = $dormMap;
+    	$return['AaS'] = $AaS;
+    	$return['runTime'] = $runTime;
+
+
+    	return $return;
+    }
+
 
 	//普通算法
     public function ordinary(){
